@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import List
 from datetime import datetime
 
+
 @dataclass(frozen=True)
 class Expense:
     description: str

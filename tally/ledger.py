@@ -25,7 +25,7 @@ class Ledger:
 
     def apply_expense(self, expense, strategy):
         splits = strategy.calculate_splits(expense)
-        
+
         # Determine the net changes for each member
         changes = {p: -amount for p, amount in splits.items()}
         changes[expense.payer] = changes.get(expense.payer, 0) + expense.amount_pence

@@ -1,17 +1,19 @@
 from typing import Dict, List
 
+
 def parse_pounds_to_pence(pounds_str: str) -> int:
     """
     Parses a string representing pounds (e.g. '£60.00' or '£42') into integer pence.
     """
-    cleaned = pounds_str.replace('£', '').replace(',', '').strip()
-    if '.' in cleaned:
-        pounds, pence = cleaned.split('.')
+    cleaned = pounds_str.replace("£", "").replace(",", "").strip()
+    if "." in cleaned:
+        pounds, pence = cleaned.split(".")
         # Pad pence with zeros if necessary (e.g., '60.5' -> '50')
-        pence = pence.ljust(2, '0')[:2]
+        pence = pence.ljust(2, "0")[:2]
         return int(pounds) * 100 + int(pence)
     else:
         return int(cleaned) * 100
+
 
 def format_pence_to_pounds(pence: int) -> str:
     """
@@ -23,14 +25,17 @@ def format_pence_to_pounds(pence: int) -> str:
     remainder = abs_pence % 100
     return f"{sign}£{pounds}.{remainder:02d}"
 
-def allocate_pennies(total_pence: int, weights: Dict[str, int], order: List[str]) -> Dict[str, int]:
+
+def allocate_pennies(
+    total_pence: int, weights: Dict[str, int], order: List[str]
+) -> Dict[str, int]:
     """
     Distributes total_pence across participants according to integer weights.
-    
+
     Rule for leftover pennies:
-    Any remaining pennies (due to division truncation) are distributed one-by-one 
-    starting with the participants who have the highest weight. Ties in weight 
-    are broken by the original 'order' list. Participants with a weight of 0 
+    Any remaining pennies (due to division truncation) are distributed one-by-one
+    starting with the participants who have the highest weight. Ties in weight
+    are broken by the original 'order' list. Participants with a weight of 0
     do not receive any remainder.
     """
     total_weight = sum(weights.values())
@@ -56,4 +61,3 @@ def allocate_pennies(total_pence: int, weights: Dict[str, int], order: List[str]
             remainder -= 1
 
     return splits
-

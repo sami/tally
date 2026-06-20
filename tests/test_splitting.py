@@ -3,6 +3,7 @@ from decimal import Decimal
 from tally.splitting import EqualSplit, SharesSplit, PercentageSplit, ExactSplit
 from tally.models import Expense
 
+
 class TestSplitting(unittest.TestCase):
     def test_equal_split_reconciles_exactly(self):
         expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None)
@@ -29,11 +30,13 @@ class TestSplitting(unittest.TestCase):
 
     def test_percentage_split(self):
         expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None)
-        strategy = PercentageSplit({
-            "Sami": Decimal("33.33"), 
-            "Mariam": Decimal("33.33"), 
-            "Yusuf": Decimal("33.34")
-        })
+        strategy = PercentageSplit(
+            {
+                "Sami": Decimal("33.33"),
+                "Mariam": Decimal("33.33"),
+                "Yusuf": Decimal("33.34"),
+            }
+        )
         splits = strategy.calculate_splits(expense)
         self.assertEqual(sum(splits.values()), 1000)
         self.assertEqual(splits["Sami"], 333)
@@ -58,5 +61,6 @@ class TestSplitting(unittest.TestCase):
         with self.assertRaises(ValueError):
             ExactSplit({"Sami": 1000}).calculate_splits(expense)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

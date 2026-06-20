@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from tally.adapters import ExternalRecord, adapt_external_record
 from tally.models import Expense
 
+
 class TestAdapters(unittest.TestCase):
     def test_adapter_normalises_money_date_and_field_names(self):
         # The external record has a different shape
@@ -14,11 +15,11 @@ class TestAdapters(unittest.TestCase):
             for_whom=["Sami", "Mariam", "Yusuf"],
             cost_str="£60.00",
             occurred_at="2023-10-25T19:30:00Z",
-            description="Dinner"
+            description="Dinner",
         )
-        
+
         expense = adapt_external_record(external_record)
-        
+
         self.assertIsInstance(expense, Expense)
         self.assertEqual(expense.payer, "Sami")
         self.assertEqual(expense.participants, ["Sami", "Mariam", "Yusuf"])
@@ -35,10 +36,11 @@ class TestAdapters(unittest.TestCase):
             for_whom=["Sami"],
             cost_str="£42",
             occurred_at="2023-10-25T19:30:00Z",
-            description="Book"
+            description="Book",
         )
         expense = adapt_external_record(external_record)
         self.assertEqual(expense.amount_pence, 4200)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
