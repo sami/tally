@@ -1,13 +1,7 @@
 import unittest
 from tally.ledger import Ledger
 from tally.observers import Listener, BalanceReportListener, ThresholdAlertListener
-
-class FakeOutput:
-    def __init__(self):
-        self.messages = []
-
-    def write(self, msg: str):
-        self.messages.append(msg)
+from tally.notifier import FakeOutput
 
 class DummyListener(Listener):
     def __init__(self):
