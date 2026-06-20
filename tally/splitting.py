@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, List
+from dataclasses import dataclass
 from decimal import Decimal
 from tally.models import Expense
 from tally.money import allocate_pennies
@@ -65,3 +66,39 @@ class ExactSplit(SplitStrategy):
                 "Exact split amounts must sum to the expense total"
             )
         return self.amounts.copy()
+
+
+@dataclass(frozen=True)
+class Item:
+    description: str
+    amount_pence: int
+    participants: List[str]
+
+
+class ItemisedSplit(SplitStrategy):
+    def __init__(self, items: List[Item]):
+        self.items = items
+
+    def calculate_splits(self, expense: Expense) -> Dict[str, int]:
+        total_items = sum(item.amount_pence for item in self.items)
+        if total_items != expense.amount_pence:
+            raise ValueError(
+                f"Sum of items ({total_items}) must equal expense total ({expense.amount_pence})"
+            )
+
+        unique_participants = set()
+        for item in self.items:
+            unique_participants.update(item.participants)
+        
+        self._validate_participants(expense, unique_participants)
+
+        final_splits = {p: 0 for p in expense.participants}
+        for item in self.items:
+            weights = {p: 1 for p in item.participants}
+            splits = allocate_pennies(
+                item.amount_pence, weights, item.participants
+            )
+            for p, amt in splits.items():
+                final_splits[p] += amt
+                
+        return final_splits

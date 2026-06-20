@@ -1,10 +1,13 @@
 import unittest
 from decimal import Decimal
+from datetime import datetime, timezone
 from tally.splitting import (
     EqualSplit,
     SharesSplit,
     PercentageSplit,
     ExactSplit,
+    ItemisedSplit,
+    Item,
 )
 from tally.models import Expense
 
@@ -71,6 +74,44 @@ class TestSplitting(unittest.TestCase):
         expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam"], None)
         with self.assertRaises(ValueError):
             ExactSplit({"Sami": 1000}).calculate_splits(expense)
+
+    def test_itemised_split(self):
+        expense = Expense(
+            description="Grocery receipt",
+            amount_pence=4500,
+            payer="Mariam",
+            participants=["Mariam", "Sami"],
+            date=datetime.now(timezone.utc),
+        )
+        # Mariam and Sami split bread (1000)
+        # Sami exclusively pays for cheese (2000)
+        # Mariam exclusively pays for apples (1500)
+        items = [
+            Item("Bread", 1000, ["Mariam", "Sami"]),
+            Item("Cheese", 2000, ["Sami"]),
+            Item("Apples", 1500, ["Mariam"]),
+        ]
+        strategy = ItemisedSplit(items)
+        splits = strategy.calculate_splits(expense)
+        
+        # Sami's share: 500 (bread) + 2000 (cheese) = 2500
+        # Mariam's share: 500 (bread) + 1500 (apples) = 2000
+        self.assertEqual(splits["Sami"], 2500)
+        self.assertEqual(splits["Mariam"], 2000)
+
+    def test_itemised_split_validation(self):
+        expense = Expense(
+            description="Invalid receipt",
+            amount_pence=1000,
+            payer="Mariam",
+            participants=["Mariam", "Sami"],
+            date=datetime.now(timezone.utc),
+        )
+        # Total items don't match expense
+        items = [Item("Bread", 500, ["Mariam", "Sami"])]
+        strategy = ItemisedSplit(items)
+        with self.assertRaises(ValueError):
+            strategy.calculate_splits(expense)
 
 
 if __name__ == "__main__":
