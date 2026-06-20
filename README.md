@@ -48,12 +48,12 @@ I built this project to show how "textbook" design patterns solve real problems.
 **The Problem:** When a balance changes, we want to print a report, and maybe raise an alert if a user goes over a debt limit. Putting `print()` statements inside the `Ledger` tightly couples UI with business logic.
 **The Solution:** The Observer pattern. The Ledger maintains a list of listeners. When a balance changes, it simply announces "Hey, the balance changed!" to its listeners. `BalanceReportListener` and `ThresholdAlertListener` listen and react independently.
 
-### D. Command (`tally.commands.Command`)
-**The Problem:** Users make mistakes and want to "Undo" an expense. To undo an expense, you have to remember exactly how much every person's balance changed and reverse it.
-**The Solution:** Instead of directly executing maths on the ledger, I wrap the entire action in an `ApplyExpenseCommand`. This command object has an `execute()` method and an `undo()` method. The Ledger keeps a history stack of these objects. To undo, it just pops the last command and calls `.undo()`.
+### D. Command (`tally.commands.ApplyEntryCommand`)
+**The Problem:** Modifying balances directly means losing the history of *what* happened. More importantly, it makes implementing an "Undo" feature incredibly messy (you'd have to manually reverse math).
+**The Solution:** Every action is packaged as a Command object with `execute()` and `undo()` methods. The Ledger simply maintains a stack of executed commands. Undoing the last transaction is as trivial as popping the stack and calling `.undo()`.
 
 ### E. Decorator (`tally.commands.LoggingCommandDecorator`)
-**The Problem:** We want to log whenever a command is executed or undone. Modifying the `ApplyExpenseCommand` to include `print("Logging...")` violates the Single Responsibility Principle (it should only care about maths, not logging).
+**The Problem:** We want to log whenever a command is executed or undone. Modifying the `ApplyEntryCommand` to include `print("Logging...")` violates the Single Responsibility Principle (it should only care about maths, not logging).
 **The Solution:** The Decorator pattern lets us "wrap" the command. The `LoggingCommandDecorator` takes a command, prints a log, calls the command's real `execute()`, and then prints a success log. To the Ledger, the decorated command looks exactly like a normal command.
 
 ### F. Dependency Injection (`tally.notifier.Output`, `tally.clock.Clock`)

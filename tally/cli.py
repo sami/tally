@@ -49,7 +49,6 @@ class TallyCLI(cmd.Cmd):
             return
 
         try:
-            # shlex.split helps parse arguments if they contain quotes, but for simple spaces we can just split manually.
             # Easiest way: payer, amount, *desc
             parts = arg.split(maxsplit=2)
             if len(parts) < 3:
