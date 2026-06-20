@@ -10,14 +10,17 @@ def parse_pounds_to_pence(amount_str: str) -> int:
     By converting £10.50 into 1050 pence (an exact integer), I completely eliminate
     floating point rounding errors.
     """
-    cleaned = amount_str.replace("£", "").replace(",", "").strip()
+    is_negative = amount_str.startswith("-") or "-£" in amount_str
+    cleaned = amount_str.replace("£", "").replace(",", "").replace("-", "").strip()
     if "." in cleaned:
         pounds, pence = cleaned.split(".")
         # Pad pence with zeros if necessary (e.g., '60.5' -> '50')
         pence = pence.ljust(2, "0")[:2]
-        return int(pounds) * 100 + int(pence)
+        val = int(pounds) * 100 + int(pence)
     else:
-        return int(cleaned) * 100
+        val = int(cleaned) * 100
+        
+    return -val if is_negative else val
 
 
 def format_pence_to_pounds(pence: int) -> str:

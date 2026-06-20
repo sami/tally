@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timezone
 from tally.adapters import ExternalRecord, adapt_external_record
-from tally.models import Expense
+from tally.models import Expense, EntryType
 
 
 class TestAdapters(unittest.TestCase):

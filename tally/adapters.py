@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 from datetime import datetime
-from tally.models import Expense
+from tally.models import Expense, EntryType
 from tally.money import parse_pounds_to_pence
 
 
@@ -36,4 +36,5 @@ def adapt_external_record(record: ExternalRecord) -> Expense:
         payer=record.paid_by,
         participants=record.for_whom,
         date=date_obj,
+        entry_type=EntryType.EXPENSE,
     )

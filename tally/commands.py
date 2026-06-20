@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Dict, TYPE_CHECKING
 
-from tally.models import Expense
+from tally.models import Entry
 from tally.splitting import SplitStrategy
 
 if TYPE_CHECKING:
@@ -29,22 +29,22 @@ class Command(ABC):
         pass
 
 
-class ApplyExpenseCommand(Command):
+class ApplyEntryCommand(Command):
     def __init__(
-        self, ledger: Ledger, expense: Expense, strategy: SplitStrategy
+        self, ledger: Ledger, entry: Entry, strategy: SplitStrategy
     ):
         self.ledger = ledger
-        self.expense = expense
+        self.entry = entry
         self.strategy = strategy
         self.changes: Dict[str, int] = {}
         self.splits: Dict[str, int] = {}
 
     def execute(self) -> None:
-        self.splits = self.strategy.calculate_splits(self.expense)
+        self.splits = self.strategy.calculate_splits(self.entry)
 
         self.changes = {p: -amount for p, amount in self.splits.items()}
-        self.changes[self.expense.payer] = (
-            self.changes.get(self.expense.payer, 0) + self.expense.amount_pence
+        self.changes[self.entry.payer] = (
+            self.changes.get(self.entry.payer, 0) + self.entry.amount_pence
         )
 
         for member, change in self.changes.items():
@@ -72,7 +72,7 @@ class CommandDecorator(Command):
 class LoggingCommandDecorator(CommandDecorator):
     """
     I used the Decorator Pattern because I want to log whenever a command executes
-    or undos. I COULD put `print("Logging...")` inside `ApplyExpenseCommand.execute()`,
+    or undos. I COULD put `print("Logging...")` inside `ApplyEntryCommand.execute()`,
     but that violates the Single Responsibility Principle (it shouldn't care about logging).
     Instead, I "wrap" the command in this Decorator. This decorator implements the
     exact same interface (`Command`), but intercepts the calls, logs what it needs to,

@@ -9,13 +9,13 @@ from tally.splitting import (
     ItemisedSplit,
     Item,
 )
-from tally.models import Expense
+from tally.models import Expense, EntryType
 
 
 class TestSplitting(unittest.TestCase):
     def test_equal_split_reconciles_exactly(self):
         expense = Expense(
-            "Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None
+            "Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None, EntryType.EXPENSE
         )
         strategy = EqualSplit()
         splits = strategy.calculate_splits(expense)
@@ -26,7 +26,7 @@ class TestSplitting(unittest.TestCase):
 
     def test_shares_split(self):
         expense = Expense(
-            "Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None
+            "Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None, EntryType.EXPENSE
         )
         strategy = SharesSplit({"Sami": 2, "Mariam": 1, "Yusuf": 0})
         splits = strategy.calculate_splits(expense)
@@ -36,13 +36,13 @@ class TestSplitting(unittest.TestCase):
         self.assertEqual(splits["Yusuf"], 0)
 
     def test_percentage_split_rejects_invalid_sum(self):
-        Expense("Test", 1000, "Sami", ["Sami", "Mariam"], None)
+        Expense("Test", 1000, "Sami", ["Sami", "Mariam"], None, EntryType.EXPENSE)
         with self.assertRaises(ValueError):
             PercentageSplit({"Sami": Decimal("50"), "Mariam": Decimal("40")})
 
     def test_percentage_split(self):
         expense = Expense(
-            "Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None
+            "Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None, EntryType.EXPENSE
         )
         strategy = PercentageSplit(
             {
@@ -58,12 +58,12 @@ class TestSplitting(unittest.TestCase):
         self.assertEqual(splits["Yusuf"], 334)
 
     def test_exact_split_rejects_invalid_sum(self):
-        expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam"], None)
+        expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam"], None, EntryType.EXPENSE)
         with self.assertRaises(ValueError):
             ExactSplit({"Sami": 500, "Mariam": 400}).calculate_splits(expense)
 
     def test_exact_split(self):
-        expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam"], None)
+        expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam"], None, EntryType.EXPENSE)
         strategy = ExactSplit({"Sami": 600, "Mariam": 400})
         splits = strategy.calculate_splits(expense)
         self.assertEqual(sum(splits.values()), 1000)
@@ -71,7 +71,7 @@ class TestSplitting(unittest.TestCase):
         self.assertEqual(splits["Mariam"], 400)
 
     def test_split_rejects_mismatched_participants(self):
-        expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam"], None)
+        expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam"], None, EntryType.EXPENSE)
         with self.assertRaises(ValueError):
             ExactSplit({"Sami": 1000}).calculate_splits(expense)
 
@@ -81,7 +81,7 @@ class TestSplitting(unittest.TestCase):
             amount_pence=4500,
             payer="Mariam",
             participants=["Mariam", "Sami"],
-            date=datetime.now(timezone.utc),
+            date=datetime.now(timezone.utc), entry_type=EntryType.EXPENSE,
         )
         # Mariam and Sami split bread (1000)
         # Sami exclusively pays for cheese (2000)
@@ -105,7 +105,7 @@ class TestSplitting(unittest.TestCase):
             amount_pence=1000,
             payer="Mariam",
             participants=["Mariam", "Sami"],
-            date=datetime.now(timezone.utc),
+            date=datetime.now(timezone.utc), entry_type=EntryType.EXPENSE,
         )
         # Total items don't match expense
         items = [Item("Bread", 500, ["Mariam", "Sami"])]

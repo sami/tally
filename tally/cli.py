@@ -5,21 +5,23 @@ from typing import List
 
 from tally.ledger import Ledger
 from tally.notifier import Output
-from tally.models import Expense
+from tally.models import Expense, Settlement, EntryType
 from tally.splitting import EqualSplit, ExactSplit
-from tally.commands import ApplyExpenseCommand, LoggingCommandDecorator
+from tally.commands import ApplyEntryCommand, LoggingCommandDecorator
 from tally.money import parse_pounds_to_pence, format_pence_to_pounds
 from tally.settlement import suggest_optimal_settlements
+from tally.clock import Clock
 
 
 class TallyCLI(cmd.Cmd):
     intro = "Welcome to Tally. Type help or ? to list commands.\n"
     prompt = "(tally) "
 
-    def __init__(self, ledger: Ledger, output: Output):
+    def __init__(self, ledger: Ledger, output: Output, clock: Clock):
         super().__init__()
         self.ledger = ledger
         self.output = output
+        self.clock = clock
         self.users: List[str] = []
 
     def precmd(self, line):
@@ -70,11 +72,12 @@ class TallyCLI(cmd.Cmd):
                 amount_pence=amount_pence,
                 payer=payer,
                 participants=self.users.copy(),
-                date=datetime.now(timezone.utc),
+                date=self.clock.now(),
+                entry_type=EntryType.EXPENSE,
             )
 
             strategy = EqualSplit()
-            command = ApplyExpenseCommand(self.ledger, expense, strategy)
+            command = ApplyEntryCommand(self.ledger, expense, strategy)
             decorated = LoggingCommandDecorator(
                 command, f"Expense: {description}", self.output
             )
@@ -107,16 +110,17 @@ class TallyCLI(cmd.Cmd):
         try:
             amount_pence = parse_pounds_to_pence(amount_str)
 
-            expense = Expense(
+            settlement = Settlement(
                 description="Settlement",
                 amount_pence=amount_pence,
                 payer=payer,
                 participants=[payee],
-                date=datetime.now(timezone.utc),
+                date=self.clock.now(),
+                entry_type=EntryType.SETTLEMENT,
             )
 
             strategy = ExactSplit({payee: amount_pence})
-            command = ApplyExpenseCommand(self.ledger, expense, strategy)
+            command = ApplyEntryCommand(self.ledger, settlement, strategy)
             decorated = LoggingCommandDecorator(
                 command, f"Settlement from {payer} to {payee}", self.output
             )

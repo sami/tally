@@ -1,4 +1,4 @@
-from tally.commands import ApplyExpenseCommand
+from tally.commands import ApplyEntryCommand
 import unittest
 from datetime import datetime, timezone
 
@@ -41,7 +41,7 @@ class TestWiring(unittest.TestCase):
 
         # 4. Ledger applies it
         self.ledger.execute(
-            ApplyExpenseCommand(self.ledger, expense1, strategy1)
+            ApplyEntryCommand(self.ledger, expense1, strategy1)
         )
 
         # 5. Verify Ledger balances
@@ -73,7 +73,7 @@ class TestWiring(unittest.TestCase):
         expense2 = adapt_external_record(record2)
         strategy2 = SharesSplit({"Mariam": 1, "Yusuf": 2})
         self.ledger.execute(
-            ApplyExpenseCommand(self.ledger, expense2, strategy2)
+            ApplyEntryCommand(self.ledger, expense2, strategy2)
         )
 
         # Mariam paid 12000. Her share is 4000. Net from this: +8000.

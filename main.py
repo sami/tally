@@ -1,12 +1,14 @@
 import sys
 from tally.adapters import ExternalRecord, adapt_external_record
 from tally.ledger import Ledger
-from tally.commands import ApplyExpenseCommand, LoggingCommandDecorator
+from tally.commands import ApplyEntryCommand, LoggingCommandDecorator
 from tally.notifier import RealOutput
 from tally.observers import BalanceReportListener, ThresholdAlertListener
 from tally.splitting import EqualSplit, SharesSplit, ExactSplit
 from tally.money import format_pence_to_pounds
 from tally.cli import TallyCLI
+from tally.clock import RealClock
+from tally.models import Settlement, EntryType
 
 
 def run_demo():
@@ -38,7 +40,7 @@ def run_demo():
     output.write(
         f"--- [Expense] {expense1.payer} paid {record1.cost_str} for {expense1.description} ---"
     )
-    ledger.execute(ApplyExpenseCommand(ledger, expense1, strategy1))
+    ledger.execute(ApplyEntryCommand(ledger, expense1, strategy1))
 
     # Expense 2: Mariam pays for hotel for Mariam and Yusuf
     record2 = ExternalRecord(
@@ -54,11 +56,12 @@ def run_demo():
     output.write(
         f"\n--- [Expense] {expense2.payer} paid {record2.cost_str} for {expense2.description} ---"
     )
-    ledger.execute(ApplyExpenseCommand(ledger, expense2, strategy2))
+    ledger.execute(ApplyEntryCommand(ledger, expense2, strategy2))
     # Yusuf's share of £150 is £100. He already owed £30. Total debt = £130.
     # This will trigger the alert since threshold is £50!
 
     # Expense 3: Settlement - Yusuf pays Mariam £100
+    # Wait, the demo used ExternalRecord for settlement, but let's instantiate Settlement directly
     record3 = ExternalRecord(
         paid_by="Yusuf",
         for_whom=["Mariam"],
@@ -66,13 +69,21 @@ def run_demo():
         occurred_at="2023-10-27T09:00:00Z",
         description="Settlement",
     )
-    expense3 = adapt_external_record(record3)
+    expense3_adapted = adapt_external_record(record3)
+    settlement = Settlement(
+        description=expense3_adapted.description,
+        amount_pence=expense3_adapted.amount_pence,
+        payer=expense3_adapted.payer,
+        participants=expense3_adapted.participants,
+        date=expense3_adapted.date,
+        entry_type=EntryType.SETTLEMENT
+    )
     # Yusuf fronts £100, Mariam's share of this "expense" is £100
     strategy3 = ExactSplit({"Mariam": 10000})
     output.write(
-        f"\n--- [Settlement] {expense3.payer} pays {record3.cost_str} to {expense3.participants[0]} ---"
+        f"\n--- [Settlement] {settlement.payer} pays {record3.cost_str} to {settlement.participants[0]} ---"
     )
-    ledger.execute(ApplyExpenseCommand(ledger, expense3, strategy3))
+    ledger.execute(ApplyEntryCommand(ledger, settlement, strategy3))
 
     output.write("\n--- Current Balances ---")
     for member in ["Sami", "Mariam", "Yusuf"]:
@@ -92,7 +103,7 @@ def run_demo():
     output.write(
         f"\n--- [Expense] {expense4.payer} paid {record4.cost_str} for {expense4.description} ---"
     )
-    base_command = ApplyExpenseCommand(ledger, expense4, strategy4)
+    base_command = ApplyEntryCommand(ledger, expense4, strategy4)
     decorated_command = LoggingCommandDecorator(
         base_command, "Mistake Expense Entry", output
     )
@@ -123,11 +134,12 @@ def main():
     else:
         ledger = Ledger()
         output = RealOutput()
+        clock = RealClock()
         ledger.add_listener(BalanceReportListener(output))
         ledger.add_listener(
             ThresholdAlertListener(threshold_pence=5000, output=output)
         )
-        cli = TallyCLI(ledger, output)
+        cli = TallyCLI(ledger, output, clock)
         try:
             cli.cmdloop()
         except KeyboardInterrupt:

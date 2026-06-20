@@ -1,8 +1,8 @@
 import unittest
 from datetime import datetime, timezone
 from tally.ledger import Ledger
-from tally.commands import ApplyExpenseCommand
-from tally.models import Expense
+from tally.commands import ApplyEntryCommand
+from tally.models import Expense, EntryType
 from tally.splitting import EqualSplit
 
 
@@ -56,10 +56,11 @@ class TestLedgerSingleton(unittest.TestCase):
             "Sami",
             ["Sami", "Mariam"],
             datetime.now(timezone.utc),
+            entry_type=EntryType.EXPENSE
         )
         strategy = EqualSplit()
 
-        ledger.execute(ApplyExpenseCommand(ledger, expense, strategy))
+        ledger.execute(ApplyEntryCommand(ledger, expense, strategy))
 
         # Sami paid 1000. His share is 500. Net: +500.
         # Mariam paid 0. Her share is 500. Net: -500.
@@ -75,6 +76,7 @@ class TestLedgerSingleton(unittest.TestCase):
             "Sami",
             ["Sami", "Mariam"],
             datetime.now(timezone.utc),
+            entry_type=EntryType.EXPENSE
         )
         strategy = EqualSplit()
 
@@ -85,10 +87,16 @@ class TestLedgerSingleton(unittest.TestCase):
                 notified[member] = new_balance
 
         ledger.add_listener(DummyListener())
-        ledger.execute(ApplyExpenseCommand(ledger, expense, strategy))
+        ledger.execute(ApplyEntryCommand(ledger, expense, strategy))
 
         self.assertEqual(notified["Sami"], 500)
         self.assertEqual(notified["Mariam"], -500)
+
+    def test_change_balance_zero_delta(self):
+        ledger = Ledger()
+        ledger.change_balance("Sami", 0)
+        # Should early return, balance should be 0 and history/listeners unnotified
+        self.assertEqual(ledger.get_balance("Sami"), 0)
 
 
 if __name__ == "__main__":

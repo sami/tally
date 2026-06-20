@@ -27,7 +27,7 @@ If you look at `tally/money.py`, you'll notice I never use `float` to represent 
 
 **Why not Floats?**  
 Computers represent floating-point numbers in base-2, which means numbers like `0.1` cannot be represented perfectly. If you divide £10.00 by 3 people using floats, you might get `3.3333333333333335`. When you sum them back up, you might get `9.999999999999999`. 
-By using integers, I maintain strict exactness. I created a deterministic `allocate_pennies` function that guarantees pennies are distributed deterministically by weight, and any remaining indivisible pennies are handed out sequentially so the sum perfectly matches the original expense.
+By using integers, I maintain strict exactness. I created a deterministic `allocate_pennies` function that guarantees pennies are distributed deterministically by weight, and any remaining indivisible pennies are handed out sequentially. I chose to allocate remaining pennies based on the participant's highest original weight, rather than by sorting the remainders themselves, because it aligns with intent: the person who had the largest share of the bill pays the indivisible penny. This ensures the sum perfectly matches the original expense with complete fairness.
 
 ---
 
@@ -38,6 +38,7 @@ I built this project to show how "textbook" design patterns solve real problems.
 ### A. Singleton (`tally.ledger.Ledger`)
 **The Problem:** If two different parts of the application create their own "Ledger", the state of who owes who gets out of sync. We need one absolute source of truth.
 **The Solution:** The Singleton pattern ensures that calling `Ledger()` always returns the exact same instance in memory. It guarantees the zero-sum invariant (if A owes B £10, B is owed £10 by A) is globally maintained.
+*Reflection on Singleton:* While this ensures global correctness in the app, it introduces challenges in automated testing, known as "leaking state". Because the Ledger persists across tests, I had to introduce a `Ledger.reset()` lifecycle hook and actively call it during test `setUp` and `tearDown` to ensure tests run in isolation.
 
 ### B. Strategy (`tally.splitting.SplitStrategy`)
 **The Problem:** Expenses can be split equally, by exact amounts, by percentages, by shares, or itemised line-by-line. If I used an `if/elif/else` block, `ledger.py` would become massive and fragile every time I added a new splitting method.
@@ -69,7 +70,7 @@ I built this project to show how "textbook" design patterns solve real problems.
 
 **The Problem:** When a group trip ends, people need to settle their debts. A naive "greedy" algorithm (largest debtor pays largest creditor) works, but can result in unnecessary transactions. For example, if A owes B £10, B owes C £10, and C owes A £10, a naive algorithm might issue 2 or 3 payments. The optimal answer is 0 payments (they cancel out).
 **The Solution (`tally.settlement.py`):** Minimising the number of transactions is equivalent to finding the maximum number of zero-sum subsets within the group. I used **Bitmask Dynamic Programming (DP) over Subsets**. 
-This is an NP-hard problem ($O(3^N)$ time complexity). While exponential, expense sharing groups rarely exceed 15-20 people, making this perfectly suitable. My DP algorithm finds all optimal disjoint partitions, and then safely applies a greedy settlement *within* those perfect boundaries, guaranteeing the absolute minimum number of payments mathematically possible.
+This is an NP-hard problem ($O(3^N)$ time complexity). While exponential, expense sharing groups rarely exceed $N \le 15$ people, making this algorithm highly effective in practice. My DP algorithm finds all optimal disjoint partitions, and then safely applies a greedy settlement *within* those perfect boundaries, guaranteeing the absolute minimum number of payments mathematically possible.
 
 ---
 
@@ -79,7 +80,7 @@ To drive the app interactively via the CLI, run:
 ```bash
 python3 main.py
 ```
-To run the automated test suite (currently 39 tests ensuring 100% logic coverage), run:
+To run the automated test suite (currently 44 tests ensuring 95%+ coverage), run:
 ```bash
 python3 -m unittest discover tests
 ```
