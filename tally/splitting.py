@@ -7,6 +7,15 @@ from tally.money import allocate_pennies
 
 
 class SplitStrategy(ABC):
+    """
+    I used the Strategy Pattern here because there are many ways to split a bill
+    (Equal, Exact, Percentage, Itemised). If I put all that maths inside
+    `Ledger.execute()`, the Ledger class would become massive and hard to read.
+    By defining an abstract base class (interface), I can pull the maths out into
+    tiny, isolated, polymorphic classes. The Ledger just calls `.calculate_splits()`,
+    oblivious to which strategy it's actually running!
+    """
+
     @abstractmethod
     def calculate_splits(self, expense: Expense) -> Dict[str, int]:
         pass
@@ -89,7 +98,7 @@ class ItemisedSplit(SplitStrategy):
         unique_participants = set()
         for item in self.items:
             unique_participants.update(item.participants)
-        
+
         self._validate_participants(expense, unique_participants)
 
         final_splits = {p: 0 for p in expense.participants}
@@ -100,5 +109,5 @@ class ItemisedSplit(SplitStrategy):
             )
             for p, amt in splits.items():
                 final_splits[p] += amt
-                
+
         return final_splits

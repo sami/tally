@@ -8,6 +8,7 @@ from tally.splitting import EqualSplit, SharesSplit, ExactSplit
 from tally.money import format_pence_to_pounds
 from tally.cli import TallyCLI
 
+
 def run_demo():
     # 1. Composition Root Setup
     ledger = Ledger()
@@ -77,14 +78,14 @@ def run_demo():
     for member in ["Sami", "Mariam", "Yusuf"]:
         balance = ledger.get_balance(member)
         output.write(f"{member}: {format_pence_to_pounds(balance)}")
-        
+
     # Expense 4: Intentional Mistake
     record4 = ExternalRecord(
         paid_by="Yusuf",
         for_whom=["Sami", "Mariam", "Yusuf"],
         cost_str="£300.00",
         occurred_at="2023-10-28T12:00:00Z",
-        description="Mistake Expense"
+        description="Mistake Expense",
     )
     expense4 = adapt_external_record(record4)
     strategy4 = EqualSplit()
@@ -92,13 +93,15 @@ def run_demo():
         f"\n--- [Expense] {expense4.payer} paid {record4.cost_str} for {expense4.description} ---"
     )
     base_command = ApplyExpenseCommand(ledger, expense4, strategy4)
-    decorated_command = LoggingCommandDecorator(base_command, "Mistake Expense Entry", output)
+    decorated_command = LoggingCommandDecorator(
+        base_command, "Mistake Expense Entry", output
+    )
     ledger.execute(decorated_command)
-    
+
     # Oh no, we didn't mean to do that! Let's undo.
     output.write("\n--- [Undo] Reverting the last expense ---")
     ledger.undo_last()
-    
+
     output.write("\n--- Final Balances ---")
     for member in ["Sami", "Mariam", "Yusuf"]:
         balance = ledger.get_balance(member)
@@ -106,18 +109,30 @@ def run_demo():
 
 
 def main():
+    """
+    I used Dependency Injection here because if the Ledger, Observers, and CLI
+    all created their own dependencies (e.g., `self.output = RealOutput()`),
+    the system would be tightly coupled and impossible to test without printing
+    to the real console.
+    Instead, the `main.py` file acts as the "Composition Root" — the absolute edge
+    of the app where all the independent pieces are instantiated and wired together.
+    Here, I inject the `RealOutput()`. In my test suite, I inject `FakeOutput()`.
+    """
     if len(sys.argv) > 1 and sys.argv[1] == "--demo":
         run_demo()
     else:
         ledger = Ledger()
         output = RealOutput()
         ledger.add_listener(BalanceReportListener(output))
-        ledger.add_listener(ThresholdAlertListener(threshold_pence=5000, output=output))
+        ledger.add_listener(
+            ThresholdAlertListener(threshold_pence=5000, output=output)
+        )
         cli = TallyCLI(ledger, output)
         try:
             cli.cmdloop()
         except KeyboardInterrupt:
             print("\nGoodbye!")
+
 
 if __name__ == "__main__":
     main()

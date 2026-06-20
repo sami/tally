@@ -40,7 +40,9 @@ class TestWiring(unittest.TestCase):
         strategy1 = EqualSplit()
 
         # 4. Ledger applies it
-        self.ledger.execute(ApplyExpenseCommand(self.ledger, expense1, strategy1))
+        self.ledger.execute(
+            ApplyExpenseCommand(self.ledger, expense1, strategy1)
+        )
 
         # 5. Verify Ledger balances
         # Sami paid 6000. Share is 2000. Net +4000.
@@ -70,7 +72,9 @@ class TestWiring(unittest.TestCase):
         )
         expense2 = adapt_external_record(record2)
         strategy2 = SharesSplit({"Mariam": 1, "Yusuf": 2})
-        self.ledger.execute(ApplyExpenseCommand(self.ledger, expense2, strategy2))
+        self.ledger.execute(
+            ApplyExpenseCommand(self.ledger, expense2, strategy2)
+        )
 
         # Mariam paid 12000. Her share is 4000. Net from this: +8000.
         # Previous balance: -2000. New balance: +6000.

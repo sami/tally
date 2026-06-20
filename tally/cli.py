@@ -9,6 +9,7 @@ from tally.models import Expense
 from tally.splitting import EqualSplit, ExactSplit
 from tally.commands import ApplyExpenseCommand, LoggingCommandDecorator
 from tally.money import parse_pounds_to_pence, format_pence_to_pounds
+from tally.settlement import suggest_optimal_settlements
 
 
 class TallyCLI(cmd.Cmd):
@@ -41,7 +42,9 @@ class TallyCLI(cmd.Cmd):
         """Add an expense split equally among all registered users: expense <payer> <amount> <description>
         Example: expense Sami £90.00 Dinner at Nandos"""
         if not self.users:
-            self.output.write("Error: No users registered. Use add_user first.")
+            self.output.write(
+                "Error: No users registered. Use add_user first."
+            )
             return
 
         try:
@@ -49,17 +52,19 @@ class TallyCLI(cmd.Cmd):
             # Easiest way: payer, amount, *desc
             parts = arg.split(maxsplit=2)
             if len(parts) < 3:
-                self.output.write("Error: Expected format: expense <payer> <amount> <description>")
+                self.output.write(
+                    "Error: Expected format: expense <payer> <amount> <description>"
+                )
                 return
-            
+
             payer, amount_str, description = parts[0], parts[1], parts[2]
-            
+
             if payer not in self.users:
                 self.output.write(f"Error: {payer} is not a registered user.")
                 return
 
             amount_pence = parse_pounds_to_pence(amount_str)
-            
+
             expense = Expense(
                 description=description,
                 amount_pence=amount_pence,
@@ -67,13 +72,15 @@ class TallyCLI(cmd.Cmd):
                 participants=self.users.copy(),
                 date=datetime.now(timezone.utc),
             )
-            
+
             strategy = EqualSplit()
             command = ApplyExpenseCommand(self.ledger, expense, strategy)
-            decorated = LoggingCommandDecorator(command, f"Expense: {description}", self.output)
-            
+            decorated = LoggingCommandDecorator(
+                command, f"Expense: {description}", self.output
+            )
+
             self.ledger.execute(decorated)
-            
+
         except ValueError as e:
             self.output.write(f"Error: {e}")
         except Exception as e:
@@ -84,18 +91,22 @@ class TallyCLI(cmd.Cmd):
         Example: settle Yusuf Mariam £100.00"""
         parts = arg.split(maxsplit=2)
         if len(parts) < 3:
-            self.output.write("Error: Expected format: settle <payer> <payee> <amount>")
+            self.output.write(
+                "Error: Expected format: settle <payer> <payee> <amount>"
+            )
             return
-            
+
         payer, payee, amount_str = parts[0], parts[1], parts[2]
-        
+
         if payer not in self.users or payee not in self.users:
-            self.output.write("Error: Both payer and payee must be registered users.")
+            self.output.write(
+                "Error: Both payer and payee must be registered users."
+            )
             return
-            
+
         try:
             amount_pence = parse_pounds_to_pence(amount_str)
-            
+
             expense = Expense(
                 description="Settlement",
                 amount_pence=amount_pence,
@@ -103,13 +114,15 @@ class TallyCLI(cmd.Cmd):
                 participants=[payee],
                 date=datetime.now(timezone.utc),
             )
-            
+
             strategy = ExactSplit({payee: amount_pence})
             command = ApplyExpenseCommand(self.ledger, expense, strategy)
-            decorated = LoggingCommandDecorator(command, f"Settlement from {payer} to {payee}", self.output)
-            
+            decorated = LoggingCommandDecorator(
+                command, f"Settlement from {payer} to {payee}", self.output
+            )
+
             self.ledger.execute(decorated)
-            
+
         except ValueError as e:
             self.output.write(f"Error: {e}")
 
@@ -118,7 +131,7 @@ class TallyCLI(cmd.Cmd):
         if not self.users:
             self.output.write("No users registered.")
             return
-            
+
         self.output.write("--- Current Balances ---")
         for member in self.users:
             balance = self.ledger.get_balance(member)
@@ -128,6 +141,27 @@ class TallyCLI(cmd.Cmd):
         """Undo the last transaction"""
         self.output.write("--- Undoing last action ---")
         self.ledger.undo_last()
+
+    def do_suggest_settlements(self, arg):
+        """Suggest optimal settlements to perfectly clear all debts with minimum transactions."""
+        if not self.users:
+            self.output.write("No users registered.")
+            return
+
+        balances = {u: self.ledger.get_balance(u) for u in self.users}
+        try:
+            txs = suggest_optimal_settlements(balances)
+            if not txs:
+                self.output.write("All balances are settled! Nothing to do.")
+                return
+
+            self.output.write("--- Optimal Settlement Plan ---")
+            for payer, payee, amt in txs:
+                self.output.write(
+                    f"{payer} should pay {payee} {format_pence_to_pounds(amt)}"
+                )
+        except ValueError as e:
+            self.output.write(f"Error: {e}")
 
     def do_quit(self, arg):
         """Exit the application"""

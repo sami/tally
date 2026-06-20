@@ -15,6 +15,15 @@ class ExternalRecord:
 
 
 def adapt_external_record(record: ExternalRecord) -> Expense:
+    """
+    I used the Adapter Pattern here because if I fetch expenses from an external API
+    or legacy JSON file, they might use 'cost' instead of 'amount', or have weird
+    string date formats.
+    If I let `ExternalRecord` directly into the system, the entire codebase
+    would become coupled to their messy format.
+    The Adapter acts as a quarantine barrier. It translates the external shape
+    into my pristine, sanitised `Expense` model right at the edge of the app.
+    """
     amount_pence = parse_pounds_to_pence(record.cost_str)
     # Parse ISO 8601 string. Python 3.11 natively handles 'Z',
     # but for Python 3.8+ compatibility, replace 'Z' with '+00:00'

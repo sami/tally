@@ -1,11 +1,16 @@
 from typing import Dict, List
 
 
-def parse_pounds_to_pence(pounds_str: str) -> int:
+def parse_pounds_to_pence(amount_str: str) -> int:
     """
     Parses a string representing pounds (e.g. '£60.00' or '£42') into integer pence.
+
+    I use integers for currency because floating point numbers (like 10.50) cannot be
+    perfectly represented in binary memory. If I sum up many floats, I lose precision.
+    By converting £10.50 into 1050 pence (an exact integer), I completely eliminate
+    floating point rounding errors.
     """
-    cleaned = pounds_str.replace("£", "").replace(",", "").strip()
+    cleaned = amount_str.replace("£", "").replace(",", "").strip()
     if "." in cleaned:
         pounds, pence = cleaned.split(".")
         # Pad pence with zeros if necessary (e.g., '60.5' -> '50')
@@ -31,6 +36,12 @@ def allocate_pennies(
 ) -> Dict[str, int]:
     """
     Distributes total_pence across participants according to integer weights.
+
+    If I split 1000 pence equally among 3 people, it doesn't divide cleanly.
+    I first allocate the floor (1000 // 3 = 333) to everyone.
+    The remaining 1 penny must be handed out deterministically. I sort participants
+    by their weight, then alphabetically, ensuring the exact same input ALWAYS
+    results in the exact same output. No random pennies!
 
     Rule for leftover pennies:
     Any remaining pennies (due to division truncation) are distributed one-by-one

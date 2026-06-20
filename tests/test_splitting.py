@@ -93,7 +93,7 @@ class TestSplitting(unittest.TestCase):
         ]
         strategy = ItemisedSplit(items)
         splits = strategy.calculate_splits(expense)
-        
+
         # Sami's share: 500 (bread) + 2000 (cheese) = 2500
         # Mariam's share: 500 (bread) + 1500 (apples) = 2000
         self.assertEqual(splits["Sami"], 2500)
