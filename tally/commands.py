@@ -40,3 +40,29 @@ class ApplyExpenseCommand(Command):
         # Revert the balance changes
         for member, change in self.changes.items():
             self.ledger.change_balance(member, -change)
+
+class CommandDecorator(Command):
+    def __init__(self, wrapped: Command):
+        self._wrapped = wrapped
+
+    def execute(self) -> None:
+        self._wrapped.execute()
+
+    def undo(self) -> None:
+        self._wrapped.undo()
+
+class LoggingCommandDecorator(CommandDecorator):
+    def __init__(self, wrapped: Command, name: str, output):
+        super().__init__(wrapped)
+        self.name = name
+        self.output = output
+
+    def execute(self) -> None:
+        self.output.write(f"[Log] Executing: {self.name}")
+        super().execute()
+        self.output.write(f"[Log] Execution successful: {self.name}")
+
+    def undo(self) -> None:
+        self.output.write(f"[Log] Undoing: {self.name}")
+        super().undo()
+        self.output.write(f"[Log] Undo successful: {self.name}")

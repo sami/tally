@@ -1,6 +1,6 @@
 from tally.adapters import ExternalRecord, adapt_external_record
 from tally.ledger import Ledger
-from tally.commands import ApplyExpenseCommand
+from tally.commands import ApplyExpenseCommand, LoggingCommandDecorator
 from tally.notifier import RealOutput
 from tally.observers import BalanceReportListener, ThresholdAlertListener
 from tally.splitting import EqualSplit, SharesSplit, ExactSplit
@@ -90,7 +90,9 @@ def main():
     output.write(
         f"\n--- [Expense] {expense4.payer} paid {record4.cost_str} for {expense4.description} ---"
     )
-    ledger.execute(ApplyExpenseCommand(ledger, expense4, strategy4))
+    base_command = ApplyExpenseCommand(ledger, expense4, strategy4)
+    decorated_command = LoggingCommandDecorator(base_command, "Mistake Expense Entry", output)
+    ledger.execute(decorated_command)
     
     # Oh no, we didn't mean to do that! Let's undo.
     output.write("\n--- [Undo] Reverting the last expense ---")

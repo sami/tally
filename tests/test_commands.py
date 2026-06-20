@@ -1,9 +1,11 @@
 import unittest
 from datetime import datetime, timezone
 from tally.ledger import Ledger
-from tally.commands import ApplyExpenseCommand
+from tally.ledger import Ledger
+from tally.commands import ApplyExpenseCommand, Command, LoggingCommandDecorator
 from tally.models import Expense
 from tally.splitting import EqualSplit
+from tally.notifier import FakeOutput
 
 class TestApplyExpenseCommand(unittest.TestCase):
     def test_execute_alters_balances_and_undo_reverts_them(self):
@@ -37,6 +39,31 @@ class TestApplyExpenseCommand(unittest.TestCase):
         self.assertEqual(ledger.get_balance("Sami"), 0)
         self.assertEqual(ledger.get_balance("Mariam"), 0)
         self.assertEqual(ledger.get_balance("Yusuf"), 0)
+
+class DummyCommand(Command):
+    def __init__(self):
+        self.executed = False
+        self.undone = False
+    def execute(self) -> None:
+        self.executed = True
+    def undo(self) -> None:
+        self.undone = True
+
+class TestLoggingCommandDecorator(unittest.TestCase):
+    def test_decorator_logs_and_delegates(self):
+        cmd = DummyCommand()
+        output = FakeOutput()
+        decorated = LoggingCommandDecorator(cmd, "TestCmd", output)
+        
+        decorated.execute()
+        self.assertTrue(cmd.executed)
+        self.assertIn("[Log] Executing: TestCmd", output.messages)
+        self.assertIn("[Log] Execution successful: TestCmd", output.messages)
+        
+        decorated.undo()
+        self.assertTrue(cmd.undone)
+        self.assertIn("[Log] Undoing: TestCmd", output.messages)
+        self.assertIn("[Log] Undo successful: TestCmd", output.messages)
 
 if __name__ == "__main__":
     unittest.main()
