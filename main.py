@@ -1,3 +1,4 @@
+import sys
 from tally.adapters import ExternalRecord, adapt_external_record
 from tally.ledger import Ledger
 from tally.commands import ApplyExpenseCommand, LoggingCommandDecorator
@@ -5,9 +6,9 @@ from tally.notifier import RealOutput
 from tally.observers import BalanceReportListener, ThresholdAlertListener
 from tally.splitting import EqualSplit, SharesSplit, ExactSplit
 from tally.money import format_pence_to_pounds
+from tally.cli import TallyCLI
 
-
-def main():
+def run_demo():
     # 1. Composition Root Setup
     ledger = Ledger()
     output = RealOutput()
@@ -103,6 +104,20 @@ def main():
         balance = ledger.get_balance(member)
         output.write(f"{member}: {format_pence_to_pounds(balance)}")
 
+
+def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "--demo":
+        run_demo()
+    else:
+        ledger = Ledger()
+        output = RealOutput()
+        ledger.add_listener(BalanceReportListener(output))
+        ledger.add_listener(ThresholdAlertListener(threshold_pence=5000, output=output))
+        cli = TallyCLI(ledger, output)
+        try:
+            cli.cmdloop()
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
 
 if __name__ == "__main__":
     main()
