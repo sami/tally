@@ -64,6 +64,10 @@ I built this project to show how "textbook" design patterns solve real problems.
 **The Problem:** External APIs or legacy JSON files often use different naming conventions (e.g., `cost` instead of `amount_pence`, `payer_name` instead of `payer`).
 **The Solution:** The Adapter pattern creates a protective barrier. I pass the messy `ExternalRecord` into an adapter, which translates and sanitises it into our pristine internal `Expense` domain model.
 
+### H. Domain Modeling with Subclassing (`tally.models.Entry`)
+**The Problem:** An `Expense` and a `Settlement` share the exact same structural fields (payer, participants, amount, date), but represent conceptually distinct financial actions.
+**The Solution:** I created an `Entry` protocol/base class that both `Expense` and `Settlement` inherit from. Even though they are currently structurally identical empty subclasses distinguished only by an `EntryType` enum, enforcing this taxonomy natively allows me to independently evolve their behaviors or validations in the future (e.g., settlements cannot have attachments, expenses can) without breaking existing interfaces.
+
 ---
 
 ## 4. Algorithmic Complexity: Optimal Settlement
@@ -80,7 +84,7 @@ To drive the app interactively via the CLI, run:
 ```bash
 python3 main.py
 ```
-To run the automated test suite (currently 44 tests ensuring 95%+ coverage), run:
+To run the automated test suite (currently 51 tests ensuring 98% line coverage), run:
 ```bash
 python3 -m unittest discover tests
 ```

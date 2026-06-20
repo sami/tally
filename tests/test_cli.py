@@ -77,11 +77,61 @@ class TestTallyCLI(unittest.TestCase):
         self.cli.do_add_user("Sami")
         self.cli.do_expense("Sami £10.00 Lunch")
         
-        # We know Ledger creates an ApplyEntryCommand which executes Strategy. 
-        # But wait, how do we easily inspect the date of the Expense object created?
-        # Let's mock Ledger or just assert on standard behaviour that uses it.
-        # Actually, let's just make sure it runs without crashing, and relies on the clock.
-        self.assertTrue(True)
+        # Access the history in ledger to inspect the command and its entry
+        last_command = self.ledger._history[-1]
+        entry = last_command._wrapped.entry if hasattr(last_command, "_wrapped") else last_command.entry
+        self.assertEqual(entry.date, datetime(2023, 1, 1, tzinfo=timezone.utc))
+
+    def test_cli_add_user_errors(self):
+        self.cli.do_add_user("")
+        self.assertIn("Error: Please provide a name.", self.output.messages)
+
+        self.cli.do_add_user("Sami")
+        self.cli.do_add_user("Sami")
+        self.assertIn("Error: Sami is already registered.", self.output.messages)
+
+    def test_cli_expense_format_and_unregistered(self):
+        self.cli.do_add_user("Sami")
+        self.cli.do_expense("Sami")
+        self.assertIn("Error: Expected format: expense <payer> <amount> <description>", self.output.messages)
+
+        self.cli.do_expense("Mariam £10.00 Lunch")
+        self.assertIn("Error: Mariam is not a registered user.", self.output.messages)
+
+        self.cli.do_expense("Sami invalid_amount Lunch")
+        self.assertIn("Error: invalid literal for int() with base 10: 'invalid_amount'", self.output.messages)
+
+    def test_cli_settle_errors(self):
+        self.cli.do_add_user("Sami")
+        self.cli.do_settle("Sami")
+        self.assertIn("Error: Expected format: settle <payer> <payee> <amount>", self.output.messages)
+
+        self.cli.do_settle("Sami Mariam £10.00")
+        self.assertIn("Error: Both payer and payee must be registered users.", self.output.messages)
+
+    def test_cli_no_users_balance_and_suggest(self):
+        self.cli.do_balance("")
+        self.assertIn("No users registered.", self.output.messages)
+
+        self.cli.do_suggest_settlements("")
+        self.assertIn("No users registered.", self.output.messages)
+
+    def test_suggest_settlements_already_settled(self):
+        self.cli.do_add_user("Sami")
+        self.cli.do_suggest_settlements("")
+        self.assertIn("All balances are settled! Nothing to do.", self.output.messages)
+
+    def test_suggest_settlements_value_error(self):
+        self.cli.do_add_user("Sami")
+        # Forcing an imbalance to trigger ValueError
+        self.ledger._balances["Sami"] = 100
+        self.cli.do_suggest_settlements("")
+        self.assertTrue(any("Balances do not sum to exactly 0" in msg for msg in self.output.messages))
+
+    def test_cli_quit_and_exit(self):
+        self.assertTrue(self.cli.do_quit(""))
+        self.assertIn("Goodbye!", self.output.messages)
+        self.assertTrue(self.cli.do_exit(""))
 
     def test_expense_broad_exception(self):
         self.cli.do_add_user("Sami")
