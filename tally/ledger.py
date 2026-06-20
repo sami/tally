@@ -10,8 +10,16 @@ class Ledger:
     def _init(self):
         self._balances = {}
         self._history = []
+        self._listeners = []
 
     @classmethod
     def reset(cls):
         if cls._instance is not None:
             cls._instance._init()
+
+    def add_listener(self, listener):
+        self._listeners.append(listener)
+
+    def _notify_listeners(self, member: str, new_balance: int):
+        for listener in self._listeners:
+            listener.on_balance_change(member, new_balance)
