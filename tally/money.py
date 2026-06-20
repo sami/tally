@@ -25,9 +25,13 @@ def format_pence_to_pounds(pence: int) -> str:
 
 def allocate_pennies(total_pence: int, weights: Dict[str, int], order: List[str]) -> Dict[str, int]:
     """
-    Distributes total_pence across participants according to weights.
-    Extra pennies are distributed one by one according to the provided order
-    to participants who have a weight greater than 0.
+    Distributes total_pence across participants according to integer weights.
+    
+    Rule for leftover pennies:
+    Any remaining pennies (due to division truncation) are distributed one-by-one 
+    starting with the participants who have the highest weight. Ties in weight 
+    are broken by the original 'order' list. Participants with a weight of 0 
+    do not receive any remainder.
     """
     total_weight = sum(weights.values())
     if total_weight == 0:
