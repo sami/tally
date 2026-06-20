@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timezone, timedelta
 from tally.clock import RealClock, FakeClock
-from tally.notifier import RealOutput, FakeOutput
+from tally.notifier import FakeOutput
 
 
 class TestDependencyInjection(unittest.TestCase):

@@ -29,22 +29,32 @@ class TestLedgerSingleton(unittest.TestCase):
 
         ledger_after_reset = Ledger()
         self.assertEqual(
-            len(ledger_after_reset._balances), 0, "Balances should be empty after reset"
+            len(ledger_after_reset._balances),
+            0,
+            "Balances should be empty after reset",
         )
         self.assertEqual(
-            len(ledger_after_reset._history), 0, "History should be empty after reset"
+            len(ledger_after_reset._history),
+            0,
+            "History should be empty after reset",
         )
 
     def test_initial_zero_sum_invariant(self):
         ledger = Ledger()
         # Since there are no balances, sum is 0. But let's check it.
         total = sum(ledger._balances.values())
-        self.assertEqual(total, 0, "The zero-sum invariant must hold (initially 0)")
+        self.assertEqual(
+            total, 0, "The zero-sum invariant must hold (initially 0)"
+        )
 
     def test_apply_expense_updates_balances_and_maintains_zero_sum(self):
         ledger = Ledger()
         expense = Expense(
-            "Dinner", 1000, "Sami", ["Sami", "Mariam"], datetime.now(timezone.utc)
+            "Dinner",
+            1000,
+            "Sami",
+            ["Sami", "Mariam"],
+            datetime.now(timezone.utc),
         )
         strategy = EqualSplit()
 
@@ -59,7 +69,11 @@ class TestLedgerSingleton(unittest.TestCase):
     def test_apply_expense_notifies_listeners_of_changed_balances(self):
         ledger = Ledger()
         expense = Expense(
-            "Dinner", 1000, "Sami", ["Sami", "Mariam"], datetime.now(timezone.utc)
+            "Dinner",
+            1000,
+            "Sami",
+            ["Sami", "Mariam"],
+            datetime.now(timezone.utc),
         )
         strategy = EqualSplit()
 

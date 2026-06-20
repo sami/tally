@@ -1,12 +1,19 @@
 import unittest
 from decimal import Decimal
-from tally.splitting import EqualSplit, SharesSplit, PercentageSplit, ExactSplit
+from tally.splitting import (
+    EqualSplit,
+    SharesSplit,
+    PercentageSplit,
+    ExactSplit,
+)
 from tally.models import Expense
 
 
 class TestSplitting(unittest.TestCase):
     def test_equal_split_reconciles_exactly(self):
-        expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None)
+        expense = Expense(
+            "Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None
+        )
         strategy = EqualSplit()
         splits = strategy.calculate_splits(expense)
         self.assertEqual(sum(splits.values()), 1000)
@@ -15,7 +22,9 @@ class TestSplitting(unittest.TestCase):
         self.assertEqual(splits["Yusuf"], 333)
 
     def test_shares_split(self):
-        expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None)
+        expense = Expense(
+            "Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None
+        )
         strategy = SharesSplit({"Sami": 2, "Mariam": 1, "Yusuf": 0})
         splits = strategy.calculate_splits(expense)
         self.assertEqual(sum(splits.values()), 1000)
@@ -24,12 +33,14 @@ class TestSplitting(unittest.TestCase):
         self.assertEqual(splits["Yusuf"], 0)
 
     def test_percentage_split_rejects_invalid_sum(self):
-        expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam"], None)
+        Expense("Test", 1000, "Sami", ["Sami", "Mariam"], None)
         with self.assertRaises(ValueError):
             PercentageSplit({"Sami": Decimal("50"), "Mariam": Decimal("40")})
 
     def test_percentage_split(self):
-        expense = Expense("Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None)
+        expense = Expense(
+            "Test", 1000, "Sami", ["Sami", "Mariam", "Yusuf"], None
+        )
         strategy = PercentageSplit(
             {
                 "Sami": Decimal("33.33"),

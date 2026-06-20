@@ -1,6 +1,10 @@
 import unittest
 from tally.ledger import Ledger
-from tally.observers import Listener, BalanceReportListener, ThresholdAlertListener
+from tally.observers import (
+    Listener,
+    BalanceReportListener,
+    ThresholdAlertListener,
+)
 from tally.notifier import FakeOutput
 
 
@@ -41,7 +45,9 @@ class TestObservers(unittest.TestCase):
     def test_threshold_alert_listener_fires_above_limit(self):
         fake_output = FakeOutput()
         # Limit of 5000 pence (£50)
-        listener = ThresholdAlertListener(threshold_pence=5000, output=fake_output)
+        listener = ThresholdAlertListener(
+            threshold_pence=5000, output=fake_output
+        )
 
         # Owe more than £50 (balance < -5000)
         listener.on_balance_change("Sami", -6000)
@@ -51,7 +57,9 @@ class TestObservers(unittest.TestCase):
     def test_threshold_alert_listener_stays_silent_below_limit(self):
         fake_output = FakeOutput()
         # Limit of 5000 pence (£50)
-        listener = ThresholdAlertListener(threshold_pence=5000, output=fake_output)
+        listener = ThresholdAlertListener(
+            threshold_pence=5000, output=fake_output
+        )
 
         # Owe less than £50 (balance is -4000)
         listener.on_balance_change("Sami", -4000)

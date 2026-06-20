@@ -51,7 +51,9 @@ def allocate_pennies(
 
     # Distribute remainder starting with those who had the highest weight.
     # Because sort is stable, ties are broken by the original 'order' list.
-    remainder_order = sorted(order, key=lambda p: weights.get(p, 0), reverse=True)
+    remainder_order = sorted(
+        order, key=lambda p: weights.get(p, 0), reverse=True
+    )
 
     for p in remainder_order:
         if remainder <= 0:

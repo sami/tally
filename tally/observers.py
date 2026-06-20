@@ -15,7 +15,9 @@ class BalanceReportListener(Listener):
 
     def on_balance_change(self, member: str, new_balance: int) -> None:
         formatted_balance = format_pence_to_pounds(new_balance)
-        self.output.write(f"Balance Report: {member} is now at {formatted_balance}")
+        self.output.write(
+            f"Balance Report: {member} is now at {formatted_balance}"
+        )
 
 
 class ThresholdAlertListener(Listener):
@@ -26,4 +28,6 @@ class ThresholdAlertListener(Listener):
     def on_balance_change(self, member: str, new_balance: int) -> None:
         if new_balance < -self.threshold_pence:
             owed = format_pence_to_pounds(-new_balance)
-            self.output.write(f"ALERT: {member} owes {owed}, exceeding the limit.")
+            self.output.write(
+                f"ALERT: {member} owes {owed}, exceeding the limit."
+            )

@@ -84,7 +84,9 @@ class TestWiring(unittest.TestCase):
         output_text2 = "\n".join(self.output.messages)
         self.assertIn("Balance Report: Mariam is now at £60.00", output_text2)
         self.assertIn("Balance Report: Yusuf is now at -£100.00", output_text2)
-        self.assertIn("ALERT: Yusuf owes £100.00, exceeding the limit.", output_text2)
+        self.assertIn(
+            "ALERT: Yusuf owes £100.00, exceeding the limit.", output_text2
+        )
 
 
 if __name__ == "__main__":

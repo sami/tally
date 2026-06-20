@@ -28,7 +28,9 @@ class Ledger:
 
         # Determine the net changes for each member
         changes = {p: -amount for p, amount in splits.items()}
-        changes[expense.payer] = changes.get(expense.payer, 0) + expense.amount_pence
+        changes[expense.payer] = (
+            changes.get(expense.payer, 0) + expense.amount_pence
+        )
 
         for member, change in changes.items():
             if change == 0:

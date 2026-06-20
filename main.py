@@ -1,4 +1,3 @@
-from decimal import Decimal
 from tally.adapters import ExternalRecord, adapt_external_record
 from tally.ledger import Ledger
 from tally.notifier import RealOutput
@@ -15,7 +14,9 @@ def main():
     # Register listeners
     ledger.add_listener(BalanceReportListener(output))
     # Alert threshold is £50 (5000 pence)
-    ledger.add_listener(ThresholdAlertListener(threshold_pence=5000, output=output))
+    ledger.add_listener(
+        ThresholdAlertListener(threshold_pence=5000, output=output)
+    )
 
     output.write("--- Starting Tally ---\n")
 
