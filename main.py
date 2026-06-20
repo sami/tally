@@ -1,5 +1,6 @@
 from tally.adapters import ExternalRecord, adapt_external_record
 from tally.ledger import Ledger
+from tally.commands import ApplyExpenseCommand
 from tally.notifier import RealOutput
 from tally.observers import BalanceReportListener, ThresholdAlertListener
 from tally.splitting import EqualSplit, SharesSplit, ExactSplit
@@ -35,7 +36,7 @@ def main():
     output.write(
         f"--- [Expense] {expense1.payer} paid {record1.cost_str} for {expense1.description} ---"
     )
-    ledger.apply_expense(expense1, strategy1)
+    ledger.execute(ApplyExpenseCommand(ledger, expense1, strategy1))
 
     # Expense 2: Mariam pays for hotel for Mariam and Yusuf
     record2 = ExternalRecord(
@@ -51,7 +52,7 @@ def main():
     output.write(
         f"\n--- [Expense] {expense2.payer} paid {record2.cost_str} for {expense2.description} ---"
     )
-    ledger.apply_expense(expense2, strategy2)
+    ledger.execute(ApplyExpenseCommand(ledger, expense2, strategy2))
     # Yusuf's share of £150 is £100. He already owed £30. Total debt = £130.
     # This will trigger the alert since threshold is £50!
 
@@ -69,8 +70,32 @@ def main():
     output.write(
         f"\n--- [Settlement] {expense3.payer} pays {record3.cost_str} to {expense3.participants[0]} ---"
     )
-    ledger.apply_expense(expense3, strategy3)
+    ledger.execute(ApplyExpenseCommand(ledger, expense3, strategy3))
 
+    output.write("\n--- Current Balances ---")
+    for member in ["Sami", "Mariam", "Yusuf"]:
+        balance = ledger.get_balance(member)
+        output.write(f"{member}: {format_pence_to_pounds(balance)}")
+        
+    # Expense 4: Intentional Mistake
+    record4 = ExternalRecord(
+        paid_by="Yusuf",
+        for_whom=["Sami", "Mariam", "Yusuf"],
+        cost_str="£300.00",
+        occurred_at="2023-10-28T12:00:00Z",
+        description="Mistake Expense"
+    )
+    expense4 = adapt_external_record(record4)
+    strategy4 = EqualSplit()
+    output.write(
+        f"\n--- [Expense] {expense4.payer} paid {record4.cost_str} for {expense4.description} ---"
+    )
+    ledger.execute(ApplyExpenseCommand(ledger, expense4, strategy4))
+    
+    # Oh no, we didn't mean to do that! Let's undo.
+    output.write("\n--- [Undo] Reverting the last expense ---")
+    ledger.undo_last()
+    
     output.write("\n--- Final Balances ---")
     for member in ["Sami", "Mariam", "Yusuf"]:
         balance = ledger.get_balance(member)

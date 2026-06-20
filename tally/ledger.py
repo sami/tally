@@ -23,23 +23,22 @@ class Ledger:
     def get_balance(self, member: str) -> int:
         return self._balances.get(member, 0)
 
-    def apply_expense(self, expense, strategy):
-        splits = strategy.calculate_splits(expense)
+    def change_balance(self, member: str, delta: int) -> None:
+        if delta == 0:
+            return
+        new_balance = self.get_balance(member) + delta
+        self._balances[member] = new_balance
+        self._notify_listeners(member, new_balance)
 
-        # Determine the net changes for each member
-        changes = {p: -amount for p, amount in splits.items()}
-        changes[expense.payer] = (
-            changes.get(expense.payer, 0) + expense.amount_pence
-        )
+    def execute(self, command) -> None:
+        command.execute()
+        self._history.append(command)
 
-        for member, change in changes.items():
-            if change == 0:
-                continue
-            new_balance = self.get_balance(member) + change
-            self._balances[member] = new_balance
-            self._notify_listeners(member, new_balance)
-
-        self._history.append((expense, splits))
+    def undo_last(self) -> None:
+        if not self._history:
+            return
+        command = self._history.pop()
+        command.undo()
 
     def _notify_listeners(self, member: str, new_balance: int):
         for listener in self._listeners:

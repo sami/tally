@@ -1,6 +1,7 @@
 import unittest
 from datetime import datetime, timezone
 from tally.ledger import Ledger
+from tally.commands import ApplyExpenseCommand
 from tally.models import Expense
 from tally.splitting import EqualSplit
 
@@ -58,7 +59,7 @@ class TestLedgerSingleton(unittest.TestCase):
         )
         strategy = EqualSplit()
 
-        ledger.apply_expense(expense, strategy)
+        ledger.execute(ApplyExpenseCommand(ledger, expense, strategy))
 
         # Sami paid 1000. His share is 500. Net: +500.
         # Mariam paid 0. Her share is 500. Net: -500.
@@ -84,7 +85,7 @@ class TestLedgerSingleton(unittest.TestCase):
                 notified[member] = new_balance
 
         ledger.add_listener(DummyListener())
-        ledger.apply_expense(expense, strategy)
+        ledger.execute(ApplyExpenseCommand(ledger, expense, strategy))
 
         self.assertEqual(notified["Sami"], 500)
         self.assertEqual(notified["Mariam"], -500)

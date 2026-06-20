@@ -51,4 +51,5 @@ The project purposefully maps classic Object-Oriented design patterns to specifi
 | **Strategy** | `tally.splitting.SplitStrategy` | Allows the Ledger to calculate splits for any expense polymorphically (Equal, Shares, Percentage, Exact) without writing conditional switch statements. |
 | **Observer** | `tally.observers.Listener` | Enables decoupled, passive reactions (e.g., `BalanceReportListener`, `ThresholdAlertListener`) to changes in ledger balances without modifying the Ledger itself. |
 | **Dependency Injection** | `tally.clock.Clock`, `tally.notifier.Output` | Offloads side effects (time, output generation) to interfaces, allowing real application paths and fake, perfectly deterministic test paths. |
+| **Command** | `tally.commands.ApplyExpenseCommand` | Encapsulates the application of an expense as an object with `execute()` and `undo()`, allowing the ledger to safely execute and reverse changes dynamically without tracking complex state manually. |
 | **Composition Root** | `main.py` | The absolute outer edge of the application where all dependencies, patterns, fakes, and real implementations are finally stitched together into a working whole. |
